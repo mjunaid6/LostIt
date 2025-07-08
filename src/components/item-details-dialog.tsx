@@ -17,29 +17,32 @@ import { getCategoryIcon } from "@/lib/icons";
 import { MapPin, User, Phone } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { Item, User as UserType } from "@/types";
+import type { Item } from "@/types";
 import { ScrollArea } from "./ui/scroll-area";
+import { useAuth } from "@/context/AuthContext";
 
 type ItemDetailsDialogProps = {
   item: Item;
   isOpen: boolean;
   onClose: () => void;
-  currentUser: UserType;
 };
 
-export function ItemDetailsDialog({ item, isOpen, onClose, currentUser }: ItemDetailsDialogProps) {
+export function ItemDetailsDialog({ item, isOpen, onClose }: ItemDetailsDialogProps) {
   const [isReunited, setIsReunited] = useState(item.status === 'reunited');
-  const [showConfirmation, setShowConfirmation] = useState(false);
   const { toast } = useToast();
+  const { user: currentUser } = useAuth();
 
   useEffect(() => {
     setIsReunited(item.status === 'reunited');
-    setShowConfirmation(false);
   }, [item]);
+
+  if (!currentUser) {
+    // Or a loading state, but parent should handle this
+    return null;
+  }
 
   const handleReuniteClick = () => {
     setIsReunited(true);
-    setShowConfirmation(true);
     toast({
         title: "Item Reunited!",
         description: `"${item.title}" has been marked as reunited.`,
@@ -108,7 +111,7 @@ export function ItemDetailsDialog({ item, isOpen, onClose, currentUser }: ItemDe
                 )}
                 {!isOwner && (
                     <Button size="lg" className="bg-accent hover:bg-accent/90">
-                        Contact Owner
+                        Contact Finder/Owner
                     </Button>
                 )}
             </DialogFooter>

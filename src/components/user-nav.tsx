@@ -1,4 +1,4 @@
-import Link from "next/link";
+'use client'
 import {
   Avatar,
   AvatarFallback,
@@ -15,16 +15,20 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { User } from "@/types";
+import { useAuth } from "@/context/AuthContext";
 
 function getInitials(name: string) {
+    if (!name) return '';
     const names = name.split(' ');
     if (names.length === 0) return '';
-    const firstInitial = names[0][0] || '';
-    const lastInitial = names.length > 1 ? names[names.length - 1][0] || '' : '';
+    const firstInitial = names[0]?.[0] || '';
+    const lastInitial = names.length > 1 ? names[names.length - 1]?.[0] || '' : '';
     return `${firstInitial}${lastInitial}`.toUpperCase();
 }
 
 export function UserNav({ user }: { user: User }) {
+  const { logout } = useAuth();
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -54,8 +58,8 @@ export function UserNav({ user }: { user: User }) {
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-          <Link href="/">Log out</Link>
+        <DropdownMenuItem onClick={logout} className="cursor-pointer">
+          Log out
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

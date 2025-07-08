@@ -5,30 +5,36 @@ import { ItemCard } from "@/components/item-card";
 import { Item, mockItems } from "@/lib/data";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ItemDetailsDialog } from "@/components/item-details-dialog";
-
-// Mock user data, in a real app this would come from an auth context
-const mockUser = {
-  name: "Jane Doe",
-  email: "jane@state-university.edu",
-  university: "State University",
-  avatar: "https://placehold.co/100x100.png"
-};
+import { useAuth } from '@/context/AuthContext';
+import ProtectedRoute from '@/components/ProtectedRoute';
 
 export default function DashboardPage() {
-  const [selectedItem, setSelectedItem] = useState<Item | null>(null);
+  return (
+    <ProtectedRoute>
+      <DashboardContent />
+    </ProtectedRoute>
+  )
+}
 
-  const universityItems = mockItems.filter(item => item.university === mockUser.university);
+function DashboardContent() {
+  const [selectedItem, setSelectedItem] = useState<Item | null>(null);
+  const { user } = useAuth();
+
+  // ProtectedRoute should prevent user from being null, but this is a safeguard
+  if (!user) return null;
+
+  const universityItems = mockItems.filter(item => item.university === user.university);
   const lostItems = universityItems.filter(item => item.type === 'lost' && item.status === 'lost');
   const foundItems = universityItems.filter(item => item.type === 'found' && item.status === 'found');
   
   return (
     <div className="flex flex-col min-h-screen">
-      <Header user={mockUser} />
+      <Header user={user} />
       <main className="flex-1 bg-background/50">
         <div className="container mx-auto px-4 py-8 sm:px-6 lg:px-8">
           <div className="mb-6">
             <h1 className="text-3xl font-bold tracking-tight font-headline">
-              Items at {mockUser.university}
+              Items at {user.university}
             </h1>
             <p className="text-muted-foreground mt-1">
               Browse items reported by your university community.
@@ -76,7 +82,6 @@ export default function DashboardPage() {
           item={selectedItem}
           isOpen={!!selectedItem}
           onClose={() => setSelectedItem(null)}
-          currentUser={mockUser}
         />
       )}
     </div>

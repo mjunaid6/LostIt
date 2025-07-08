@@ -14,6 +14,7 @@ export type Item = {
 };
 
 export type User = {
+  uid: string;
   name: string;
   email: string;
   university: string;
