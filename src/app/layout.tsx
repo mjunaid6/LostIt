@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { Toaster } from "@/components/ui/toaster"
 import { AuthProvider } from "@/context/AuthContext";
 import { ItemProvider } from "@/context/ItemContext";
+import { ThemeProvider } from "@/components/theme-provider";
 
 export const metadata: Metadata = {
   title: "LostIt - Lost & Found",
@@ -24,12 +25,19 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=PT+Sans:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet" />
       </head>
       <body className={cn("min-h-screen bg-background font-body antialiased")}>
-        <AuthProvider>
-          <ItemProvider>
-            {children}
-            <Toaster />
-          </ItemProvider>
-        </AuthProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <AuthProvider>
+            <ItemProvider>
+              {children}
+              <Toaster />
+            </ItemProvider>
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
