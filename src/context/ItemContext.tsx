@@ -7,6 +7,7 @@ import { useAuth } from './AuthContext';
 import { generateTags } from '@/ai/flows/generate-tags-flow';
 import { db } from '@/lib/firebase';
 import { collection, addDoc, onSnapshot, query, orderBy, doc, updateDoc, Timestamp } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
 
 
 type NewItemData = Omit<Item, 'id' | 'createdAt' | 'reportedBy' | 'tags'> & {
@@ -24,16 +25,18 @@ const ItemContext = createContext<ItemContextType | undefined>(undefined);
 export const ItemProvider = ({ children }: { children: ReactNode }) => {
   const [items, setItems] = useState<Item[]>([]);
   const { user } = useAuth();
+  const { toast } = useToast();
 
   useEffect(() => {
-    if (!db) {
+    if (!db || !db.app) {
         console.error("Firestore not initialized. Item features are disabled.");
         return;
     }
 
     const q = query(collection(db, "items"), orderBy("createdAt", "desc"));
 
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+    const unsubscribe = onSnapshot(q, 
+      (querySnapshot) => {
         const itemsFromFirestore: Item[] = [];
         querySnapshot.forEach((doc) => {
             const data = doc.data();
@@ -45,10 +48,19 @@ export const ItemProvider = ({ children }: { children: ReactNode }) => {
             } as Item);
         });
         setItems(itemsFromFirestore);
-    });
+      },
+      (error) => {
+        console.error("Firestore subscription error:", error);
+        toast({
+            variant: "destructive",
+            title: "Database Connection Error",
+            description: "Could not connect to the items database. Please check your setup and refresh the page.",
+        });
+      }
+    );
 
     return () => unsubscribe();
-  }, []);
+  }, [toast]);
 
   const addItem = async (itemData: NewItemData) => {
     if (!user || !db) return; 
