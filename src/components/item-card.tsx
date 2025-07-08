@@ -20,9 +20,10 @@ export function ItemCard({ item, onOpenDialog }: ItemCardProps) {
           <Image
             src={item.imageUrl}
             alt={item.title}
-            layout="fill"
-            objectFit="cover"
+            fill
+            className="object-cover"
             data-ai-hint="lost item"
+            sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, 33vw"
           />
         </div>
       </CardHeader>

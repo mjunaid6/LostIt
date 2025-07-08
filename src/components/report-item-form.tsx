@@ -23,8 +23,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast"
 import { categories, getCategoryIcon } from "@/lib/icons"
 import { useItems } from "@/context/ItemContext"
-import { Loader2 } from "lucide-react"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Loader2, AlertCircle } from "lucide-react"
 
+// Zod schema doesn't include the file input, as it's handled separately.
 const formSchema = z.object({
   title: z.string().min(2, {
     message: "Title must be at least 2 characters.",
@@ -53,8 +55,9 @@ type ReportItemFormProps = {
 export function ReportItemForm({ type, university }: ReportItemFormProps) {
   const router = useRouter();
   const { toast } = useToast();
-  const { addItem } = useItems();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { addItem, isUploading, uploadError } = useItems();
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -68,13 +71,32 @@ export function ReportItemForm({ type, university }: ReportItemFormProps) {
     },
   })
 
+  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setImageFile(null);
+      setImagePreview(null);
+    }
+  };
+
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    setIsSubmitting(true);
-    
+    if (!imageFile) {
+        form.setError("root", { type: "manual", message: "Please upload an image." });
+        return;
+    }
+
     try {
         await addItem({
             ...values,
-            status: type, 
+            status: type,
+            imageFile: imageFile,
         });
 
         toast({
@@ -84,23 +106,26 @@ export function ReportItemForm({ type, university }: ReportItemFormProps) {
         router.push('/dashboard');
     } catch (error: any) {
         console.error("Error adding item:", error);
-        let description = "An unexpected error occurred. Please try again.";
-        if (error.message && error.message.includes("AI tag generation failed")) {
-            description = "Could not generate AI tags for the item. Please try again later.";
-        }
         toast({
             variant: "destructive",
             title: "Submission Error",
-            description: description,
+            description: error.message || "An unexpected error occurred. Please try again.",
         });
-    } finally {
-        setIsSubmitting(false);
     }
   }
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        {uploadError && (
+            <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Upload Failed</AlertTitle>
+                <AlertDescription>
+                   {uploadError}
+                </AlertDescription>
+            </Alert>
+        )}
         <FormField
           control={form.control}
           name="title"
@@ -117,6 +142,21 @@ export function ReportItemForm({ type, university }: ReportItemFormProps) {
             </FormItem>
           )}
         />
+        <FormItem>
+            <FormLabel>Item Photo</FormLabel>
+            <FormControl>
+                <Input type="file" accept="image/*" onChange={handleImageChange} required />
+            </FormControl>
+            <FormDescription>
+                A clear photo helps others identify the item.
+            </FormDescription>
+            {imagePreview && (
+                <div className="mt-4">
+                    <img src={imagePreview} alt="Item preview" className="rounded-md max-h-48" />
+                </div>
+            )}
+            <FormMessage>{form.formState.errors.root?.message}</FormMessage>
+        </FormItem>
         <FormField
           control={form.control}
           name="description"
@@ -207,9 +247,9 @@ export function ReportItemForm({ type, university }: ReportItemFormProps) {
             />
         </div>
         
-        <Button type="submit" size="lg" className="w-full md:w-auto" disabled={isSubmitting}>
-          {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {isSubmitting ? "Submitting..." : "Submit Report"}
+        <Button type="submit" size="lg" className="w-full md:w-auto" disabled={isUploading}>
+          {isUploading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {isUploading ? "Submitting..." : "Submit Report"}
         </Button>
       </form>
     </Form>

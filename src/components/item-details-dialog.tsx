@@ -18,7 +18,7 @@ import { getCategoryIcon } from "@/lib/icons";
 import { MapPin, User as UserIcon, Phone, Tags } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { Item, User } from "@/types";
+import type { Item } from "@/types";
 import { ScrollArea } from "./ui/scroll-area";
 import { useAuth } from "@/context/AuthContext";
 import { useItems } from "@/context/ItemContext";
@@ -61,9 +61,10 @@ export function ItemDetailsDialog({ item, isOpen, onClose }: ItemDetailsDialogPr
             <Image
               src={item.imageUrl}
               alt={item.title}
-              layout="fill"
-              objectFit="cover"
+              fill
+              className="object-cover"
               data-ai-hint="found item"
+              sizes="(max-width: 600px) 100vw, 600px"
             />
           </div>
           <div className="p-6">

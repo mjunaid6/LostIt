@@ -5,25 +5,44 @@ import React, { createContext, useContext, useState, ReactNode, useEffect } from
 import type { Item } from '@/types';
 import { useAuth } from './AuthContext';
 import { generateTags } from '@/ai/flows/generate-tags-flow';
-import { db } from '@/lib/firebase';
+import { db, storage } from '@/lib/firebase';
 import { collection, addDoc, onSnapshot, query, orderBy, doc, updateDoc, Timestamp } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useToast } from '@/hooks/use-toast';
 
 
-type NewItemData = Omit<Item, 'id' | 'createdAt' | 'reportedBy' | 'tags' | 'imageUrl'>;
+type NewItemData = Omit<Item, 'id' | 'createdAt' | 'reportedBy' | 'tags' | 'imageUrl'> & {
+    imageFile?: File | null;
+};
 
 interface ItemContextType {
   items: Item[];
   addItem: (item: NewItemData) => Promise<void>;
   updateItemStatus: (itemId: string, status: 'reunited') => void;
+  isUploading: boolean;
+  uploadError: string | null;
 }
 
 const ItemContext = createContext<ItemContextType | undefined>(undefined);
+
+// Helper function to convert file to Data URI
+const fileToDataUri = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+}
+
 
 export const ItemProvider = ({ children }: { children: ReactNode }) => {
   const [items, setItems] = useState<Item[]>([]);
   const { user } = useAuth();
   const { toast } = useToast();
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
 
   useEffect(() => {
     if (!db || !db.app) {
@@ -33,7 +52,7 @@ export const ItemProvider = ({ children }: { children: ReactNode }) => {
 
     const q = query(collection(db, "items"), orderBy("createdAt", "desc"));
 
-    const unsubscribe = onSnapshot(q, 
+    const unsubscribe = onSnapshot(q,
       (querySnapshot) => {
         const itemsFromFirestore: Item[] = [];
         querySnapshot.forEach((doc) => {
@@ -61,33 +80,57 @@ export const ItemProvider = ({ children }: { children: ReactNode }) => {
   }, [toast]);
 
   const addItem = async (itemData: NewItemData) => {
-    if (!user || !db) return; 
-
-    let generatedTags: string[] = [];
-    try {
-        const result = await generateTags({
-            description: itemData.description,
-        });
-        generatedTags = result.tags;
-    } catch(e) {
-        console.error("Failed to generate tags", e);
-        // We can proceed without tags, or throw an error to be caught by the form
-        throw new Error("AI tag generation failed.");
-    }
-    
-    const finalImageUrl = "https://placehold.co/600x400.png";
-
-    const newItemForFirestore = {
-      ...itemData,
-      reportedBy: user.email,
-      createdAt: new Date(), // Firestore will convert this to a Timestamp
-      tags: generatedTags,
-      imageUrl: finalImageUrl,
+    if (!user || !db || !storage) {
+        setUploadError("Firebase is not configured correctly. Cannot submit item.");
+        return;
     };
-    
-    await addDoc(collection(db, "items"), newItemForFirestore);
+    if (!itemData.imageFile) {
+        setUploadError("An image is required to report an item.");
+        return;
+    }
+
+    setIsUploading(true);
+    setUploadError(null);
+
+    try {
+        const imageFile = itemData.imageFile;
+        const storageRef = ref(storage, `items/${Date.now()}-${imageFile.name}`);
+        await uploadBytes(storageRef, imageFile);
+        const imageUrl = await getDownloadURL(storageRef);
+
+        const photoDataUri = await fileToDataUri(imageFile);
+
+        const { tags } = await generateTags({
+            description: itemData.description,
+            photoDataUri: photoDataUri,
+        });
+
+        const { imageFile: _, ...restOfData } = itemData;
+
+        const newItemForFirestore = {
+            ...restOfData,
+            reportedBy: user.email,
+            createdAt: new Date(),
+            tags: tags,
+            imageUrl: imageUrl,
+        };
+
+        await addDoc(collection(db, "items"), newItemForFirestore);
+
+    } catch (error: any) {
+      console.error("Error adding item:", error);
+       if (error.code === 'storage/unauthorized') {
+           const origin = new URL(window.location.href).origin;
+           const errorMessage = `Permission denied. Your app's origin (${origin}) is not allowed by your Firebase Storage security rules. Please check your CORS configuration.`;
+           setUploadError(errorMessage);
+           throw new Error(errorMessage);
+       }
+       throw error;
+    } finally {
+        setIsUploading(false);
+    }
   };
-  
+
   const updateItemStatus = (itemId: string, status: 'reunited') => {
     if (!db) return;
     const itemRef = doc(db, "items", itemId);
@@ -100,6 +143,8 @@ export const ItemProvider = ({ children }: { children: ReactNode }) => {
     items,
     addItem,
     updateItemStatus,
+    isUploading,
+    uploadError,
   };
 
   return <ItemContext.Provider value={value}>{children}</ItemContext.Provider>;
