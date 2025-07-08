@@ -45,11 +45,11 @@ export default function Home() {
                 </div>
               </div>
               <img
-                src="https://images.unsplash.com/photo-1626010448982-0fec79ed1979?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxsb3N0JTIwYW5kJTIwZm91bmR8ZW58MHx8fHwxNzUxOTY5MDM0fDA&ixlib=rb-4.1.0&q=80&w=1080"
+                src="https://images.unsplash.com/photo-1587399478430-8a03a859b2a7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxtYWduaWZ5aW5nJTIwZ2xhc3MlMjBzZWFyY2h8ZW58MHx8fHwxNzE2NTYwMDAwfDA&ixlib=rb-4.1.0&q=80&w=1080"
                 width="600"
                 height="400"
                 alt="Hero"
-                data-ai-hint="campus life students"
+                data-ai-hint="searching map"
                 className="mx-auto aspect-video overflow-hidden rounded-xl object-cover sm:w-full lg:order-last lg:aspect-square"
               />
             </div>
