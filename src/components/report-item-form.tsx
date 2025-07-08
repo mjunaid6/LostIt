@@ -24,7 +24,6 @@ import { useToast } from "@/hooks/use-toast"
 import { categories, getCategoryIcon } from "@/lib/icons"
 import { useItems } from "@/context/ItemContext"
 import { Loader2 } from "lucide-react"
-import { Alert, AlertDescription, AlertTitle } from "./ui/alert"
 
 const formSchema = z.object({
   title: z.string().min(2, {
@@ -51,23 +50,11 @@ type ReportItemFormProps = {
   university: string;
 }
 
-const fileToDataUri = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-    });
-}
-
-
 export function ReportItemForm({ type, university }: ReportItemFormProps) {
   const router = useRouter();
   const { toast } = useToast();
   const { addItem } = useItems();
-  const [imageFile, setImageFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [corsErrorOrigin, setCorsErrorOrigin] = useState<string | null>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -81,37 +68,12 @@ export function ReportItemForm({ type, university }: ReportItemFormProps) {
     },
   })
 
-  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files && event.target.files[0]) {
-        setImageFile(event.target.files[0]);
-    }
-  };
-
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true);
-    setCorsErrorOrigin(null);
     
-    let photoDataUri: string | null = null;
-    if (imageFile) {
-        try {
-            photoDataUri = await fileToDataUri(imageFile);
-        } catch (error) {
-            console.error("Error converting image to data URI:", error);
-            toast({
-                variant: "destructive",
-                title: "Image Upload Error",
-                description: "Could not process the image file. Please try another.",
-            });
-            setIsSubmitting(false);
-            return;
-        }
-    }
-
     try {
         await addItem({
             ...values,
-            imageFile: imageFile,
-            photoDataUri: photoDataUri,
             status: type, 
         });
 
@@ -122,25 +84,15 @@ export function ReportItemForm({ type, university }: ReportItemFormProps) {
         router.push('/dashboard');
     } catch (error: any) {
         console.error("Error adding item:", error);
-        
-        if (error.message && error.message.startsWith('CORS:')) {
-            setCorsErrorOrigin(window.location.origin);
-             toast({
-                variant: "destructive",
-                title: "Image Upload Failed",
-                description: "A permission error occurred. See the message above the form for details.",
-            });
-        } else {
-            let description = "An unexpected error occurred. Please try again.";
-            if (error.message && error.message.includes("AI tag generation failed")) {
-                description = "Could not generate AI tags for the item. Please try again later.";
-            }
-            toast({
-                variant: "destructive",
-                title: "Submission Error",
-                description: description,
-            });
+        let description = "An unexpected error occurred. Please try again.";
+        if (error.message && error.message.includes("AI tag generation failed")) {
+            description = "Could not generate AI tags for the item. Please try again later.";
         }
+        toast({
+            variant: "destructive",
+            title: "Submission Error",
+            description: description,
+        });
     } finally {
         setIsSubmitting(false);
     }
@@ -148,17 +100,6 @@ export function ReportItemForm({ type, university }: ReportItemFormProps) {
 
   return (
     <Form {...form}>
-      {corsErrorOrigin && (
-        <Alert variant="destructive" className="mb-8">
-            <AlertTitle>Action Required: Fix Firebase Storage Permissions</AlertTitle>
-            <AlertDescription className="space-y-2">
-                <p>Your app cannot upload images because your Firebase Storage is blocking requests from this website's domain (a security feature called CORS).</p>
-                <p>To fix this, you must add the following origin to your Firebase Storage bucket's CORS configuration:</p>
-                <pre className="text-xs bg-muted p-2 rounded-md break-all font-mono">{corsErrorOrigin}</pre>
-                <p>Please refer to the Firebase documentation on "Configuring Cross-Origin Resource Sharing (CORS)" for step-by-step instructions on how to do this in the Google Cloud console.</p>
-            </AlertDescription>
-        </Alert>
-      )}
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
         <FormField
           control={form.control}
@@ -265,24 +206,10 @@ export function ReportItemForm({ type, university }: ReportItemFormProps) {
                 )}
             />
         </div>
-        <FormItem>
-          <FormLabel>Photo (Optional)</FormLabel>
-          <FormControl>
-            <Input 
-                type="file" 
-                className="text-muted-foreground file:text-foreground"
-                accept="image/*"
-                onChange={handleImageChange}
-            />
-          </FormControl>
-          <FormDescription>
-            Uploading a photo greatly increases the chance of recovery.
-          </FormDescription>
-          <FormMessage />
-        </FormItem>
+        
         <Button type="submit" size="lg" className="w-full md:w-auto" disabled={isSubmitting}>
           {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {isSubmitting ? "Analyzing & Submitting..." : "Submit Report"}
+          {isSubmitting ? "Submitting..." : "Submit Report"}
         </Button>
       </form>
     </Form>

@@ -5,16 +5,12 @@ import React, { createContext, useContext, useState, ReactNode, useEffect } from
 import type { Item } from '@/types';
 import { useAuth } from './AuthContext';
 import { generateTags } from '@/ai/flows/generate-tags-flow';
-import { db, storage } from '@/lib/firebase';
+import { db } from '@/lib/firebase';
 import { collection, addDoc, onSnapshot, query, orderBy, doc, updateDoc, Timestamp } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useToast } from '@/hooks/use-toast';
 
 
-type NewItemData = Omit<Item, 'id' | 'createdAt' | 'reportedBy' | 'tags' | 'imageUrl'> & {
-    photoDataUri?: string | null;
-    imageFile?: File | null;
-};
+type NewItemData = Omit<Item, 'id' | 'createdAt' | 'reportedBy' | 'tags' | 'imageUrl'>;
 
 interface ItemContextType {
   items: Item[];
@@ -65,13 +61,12 @@ export const ItemProvider = ({ children }: { children: ReactNode }) => {
   }, [toast]);
 
   const addItem = async (itemData: NewItemData) => {
-    if (!user || !db || !storage) return; 
+    if (!user || !db) return; 
 
     let generatedTags: string[] = [];
     try {
         const result = await generateTags({
             description: itemData.description,
-            photoDataUri: itemData.photoDataUri || undefined,
         });
         generatedTags = result.tags;
     } catch(e) {
@@ -80,24 +75,7 @@ export const ItemProvider = ({ children }: { children: ReactNode }) => {
         throw new Error("AI tag generation failed.");
     }
     
-    let finalImageUrl = "https://placehold.co/600x400.png";
-
-    if (itemData.imageFile) {
-        const file = itemData.imageFile;
-        const storageRef = ref(storage, `items/${Date.now()}-${file.name}`);
-        try {
-            const uploadResult = await uploadBytes(storageRef, file);
-            finalImageUrl = await getDownloadURL(uploadResult.ref);
-        } catch (e: any) {
-             // Firebase Storage throws 'storage/unauthorized' for CORS errors.
-            if (e.code === 'storage/unauthorized') {
-                console.error("CORS issue detected:", e);
-                throw new Error("CORS: Image upload failed due to a permission issue. Please check your Firebase Storage CORS configuration.");
-            }
-            // Re-throw other errors to be handled by the form.
-            throw e;
-        }
-    }
+    const finalImageUrl = "https://placehold.co/600x400.png";
 
     const newItemForFirestore = {
       ...itemData,
@@ -107,10 +85,6 @@ export const ItemProvider = ({ children }: { children: ReactNode }) => {
       imageUrl: finalImageUrl,
     };
     
-    // Clean up properties that shouldn't be in the database
-    delete (newItemForFirestore as any).photoDataUri;
-    delete (newItemForFirestore as any).imageFile;
-
     await addDoc(collection(db, "items"), newItemForFirestore);
   };
   
