@@ -1,6 +1,6 @@
 
 'use client'
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/context/AuthContext"
@@ -17,6 +17,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Skeleton } from "@/components/ui/skeleton"
 
 export default function SignupPage() {
   const [name, setName] = useState("")
@@ -24,9 +25,20 @@ export default function SignupPage() {
   const [password, setPassword] = useState("")
   const [university, setUniversity] = useState("")
   const [error, setError] = useState<string | null>(null)
-  const { signup } = useAuth()
+  const [isClient, setIsClient] = useState(false)
+  const { signup, user, loading } = useAuth()
   const router = useRouter()
   const { toast } = useToast()
+
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
+  
+  useEffect(() => {
+    if (!loading && user) {
+      router.push('/dashboard');
+    }
+  }, [user, loading, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -42,6 +54,45 @@ export default function SignupPage() {
     } catch (err: any) {
       setError(err.message.replace('Firebase: ', ''));
     }
+  }
+
+  if (!isClient || loading) {
+    return (
+       <div className="flex items-center justify-center min-h-screen bg-background">
+        <Card className="mx-auto max-w-sm w-full">
+          <CardHeader>
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="h-5 w-full mt-2" />
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4">
+              <div className="grid gap-2">
+                <Skeleton className="h-5 w-24" />
+                <Skeleton className="h-10 w-full" />
+              </div>
+              <div className="grid gap-2">
+                <Skeleton className="h-5 w-16" />
+                <Skeleton className="h-10 w-full" />
+              </div>
+              <div className="grid gap-2">
+                <Skeleton className="h-5 w-20" />
+                <Skeleton className="h-10 w-full" />
+              </div>
+              <div className="grid gap-2">
+                <Skeleton className="h-5 w-24" />
+                <Skeleton className="h-10 w-full" />
+              </div>
+              <Skeleton className="h-10 w-full mt-2" />
+              <Skeleton className="h-10 w-full" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (user) {
+    return null; // Or a loading spinner, while redirecting
   }
 
   return (
