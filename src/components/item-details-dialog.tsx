@@ -1,7 +1,7 @@
 
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import {
   Dialog,
@@ -33,6 +33,14 @@ export function ItemDetailsDialog({ item, isOpen, onClose }: ItemDetailsDialogPr
   const { toast } = useToast();
   const { user: currentUser } = useAuth();
   const { updateItemStatus } = useItems();
+  const [showContactInfo, setShowContactInfo] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen) {
+      // Reset state when dialog closes to ensure contact info is hidden next time
+      setShowContactInfo(false);
+    }
+  }, [isOpen]);
 
   if (!currentUser) {
     // Or a loading state, but parent should handle this
@@ -105,6 +113,7 @@ export function ItemDetailsDialog({ item, isOpen, onClose }: ItemDetailsDialogPr
             )}
 
             <DialogFooter className="pt-2 flex-col sm:flex-col sm:space-x-0 items-stretch gap-4">
+              {(isOwner || showContactInfo) && (
                 <Card className="bg-secondary/50">
                     <CardHeader className="p-0 pb-2">
                         <CardTitle className="text-base">Contact Information</CardTitle>
@@ -114,22 +123,23 @@ export function ItemDetailsDialog({ item, isOpen, onClose }: ItemDetailsDialogPr
                         <div className="flex items-center"><Phone className="w-4 h-4 mr-2" /> {item.contact}</div>
                     </CardContent>
                 </Card>
+              )}
 
-                {isOwner && !isReunited && (
-                    <Button onClick={handleReuniteClick} size="lg" className="bg-green-600 hover:bg-green-700">
-                        Mark as Reunited
-                    </Button>
-                )}
-                {isOwner && isReunited && (
-                    <Button size="lg" disabled>
-                        Item Reunited
-                    </Button>
-                )}
-                {!isOwner && (
-                    <Button size="lg" className="bg-accent hover:bg-accent/90">
-                        Contact Finder/Owner
-                    </Button>
-                )}
+              {isOwner && !isReunited && (
+                  <Button onClick={handleReuniteClick} size="lg" className="bg-green-600 hover:bg-green-700">
+                      Mark as Reunited
+                  </Button>
+              )}
+              {isOwner && isReunited && (
+                  <Button size="lg" disabled>
+                      Item Reunited
+                  </Button>
+              )}
+              {!isOwner && !showContactInfo && (
+                  <Button onClick={() => setShowContactInfo(true)} size="lg" className="bg-accent hover:bg-accent/90">
+                      Contact {item.type === 'found' ? 'Finder' : 'Owner'}
+                  </Button>
+              )}
             </DialogFooter>
           </div>
         </ScrollArea>
