@@ -23,6 +23,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast"
 import { categories, getCategoryIcon } from "@/lib/icons"
 import { useItems } from "@/context/ItemContext"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Loader2 } from "lucide-react"
 
 // Zod schema doesn't include the file input, as it's handled separately.
@@ -57,6 +58,7 @@ export function ReportItemForm({ type, university }: ReportItemFormProps) {
   const { addItem, isSubmitting } = useItems();
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [corsError, setCorsError] = useState<string | null>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -86,6 +88,7 @@ export function ReportItemForm({ type, university }: ReportItemFormProps) {
   };
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
+    setCorsError(null);
     try {
         await addItem({
             ...values,
@@ -94,19 +97,36 @@ export function ReportItemForm({ type, university }: ReportItemFormProps) {
         });
 
         toast({
-        title: `Item ${type === 'lost' ? 'Lost' : 'Found'} Reported!`,
-        description: "Your report is submitted. The image is local and will disappear on refresh.",
+            title: `Item ${type === 'lost' ? 'Lost' : 'Found'} Reported!`,
+            description: "Your report has been submitted successfully.",
         });
         router.push('/dashboard');
     } catch (error: any) {
-        // Error is already toasted in the context
-        console.error("Form submission error:", error);
+        if (error.code === 'storage/unauthorized') {
+            const origin = window.location.origin;
+            setCorsError(origin);
+        } else {
+            console.error("Form submission error:", error);
+            // A general error toast is already shown in the context
+        }
     }
   }
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        {corsError && (
+          <Alert variant="destructive">
+            <AlertTitle>CORS Configuration Needed</AlertTitle>
+            <AlertDescription>
+              To upload images, you must allow your app's origin in your Firebase Storage settings.
+              <br />
+              <strong>Your app's origin is:</strong> <code className="bg-destructive/20 px-1 py-0.5 rounded">{corsError}</code>
+              <br />
+              Please follow the setup instructions to add this origin to your bucket's CORS configuration.
+            </AlertDescription>
+          </Alert>
+        )}
         <FormField
           control={form.control}
           name="title"
@@ -219,7 +239,7 @@ export function ReportItemForm({ type, university }: ReportItemFormProps) {
                 <Input type="file" accept="image/*" onChange={handleImageChange} />
             </FormControl>
             <FormDescription>
-                A clear photo helps others identify the item. This is a temporary preview.
+                A clear photo helps others identify the item.
             </FormDescription>
             {imagePreview && (
                 <div className="mt-4">

@@ -5,8 +5,9 @@ import React, { createContext, useContext, useState, ReactNode, useEffect } from
 import type { Item } from '@/types';
 import { useAuth } from './AuthContext';
 import { generateTags } from '@/ai/flows/generate-tags-flow';
-import { db } from '@/lib/firebase';
+import { db, storage } from '@/lib/firebase';
 import { collection, addDoc, onSnapshot, query, orderBy, doc, updateDoc, Timestamp } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useToast } from '@/hooks/use-toast';
 
 
@@ -77,7 +78,7 @@ export const ItemProvider = ({ children }: { children: ReactNode }) => {
   }, [toast]);
 
   const addItem = async (itemData: NewItemData) => {
-    if (!user || !db) {
+    if (!user || !db || !storage) {
         toast({
             variant: "destructive",
             title: "Authentication Error",
@@ -89,13 +90,14 @@ export const ItemProvider = ({ children }: { children: ReactNode }) => {
     setIsSubmitting(true);
 
     try {
+        let imageUrl = "https://placehold.co/600x400.png";
         let photoDataUri: string | undefined = undefined;
-        let localImageUrl = 'https://placehold.co/600x400.png';
 
         if (itemData.imageFile) {
             photoDataUri = await fileToDataUri(itemData.imageFile);
-            // Create a temporary URL for the image from the user's browser memory
-            localImageUrl = URL.createObjectURL(itemData.imageFile);
+            const storageRef = ref(storage, `items/${Date.now()}-${itemData.imageFile.name}`);
+            await uploadBytes(storageRef, itemData.imageFile);
+            imageUrl = await getDownloadURL(storageRef);
         }
 
         const { tags } = await generateTags({
@@ -105,35 +107,33 @@ export const ItemProvider = ({ children }: { children: ReactNode }) => {
 
         const { imageFile: _, ...restOfData } = itemData;
 
-        // This object goes to Firestore, always with a placeholder image
         const newItemForFirestore = {
             ...restOfData,
             reportedBy: user.email,
             createdAt: new Date(),
             tags: tags,
-            imageUrl: 'https://placehold.co/600x400.png',
+            imageUrl: imageUrl,
         };
 
-        const docRef = await addDoc(collection(db, "items"), newItemForFirestore);
-
-        // This object is for the local state, using the temporary local image URL
-        const newItemForLocalState: Item = {
-            ...newItemForFirestore,
-            id: docRef.id,
-            imageUrl: localImageUrl, // Use the local blob/object URL
-        };
-
-        // Add to local state immediately for instant feedback.
-        // This will be overwritten when Firestore syncs, which is the desired behavior.
-        setItems(prevItems => [newItemForLocalState, ...prevItems]);
+        await addDoc(collection(db, "items"), newItemForFirestore);
 
     } catch (error: any) {
       console.error("Error adding item:", error);
-      toast({
-          variant: "destructive",
-          title: "Submission Failed",
-          description: "There was an error submitting your item. Please try again.",
-      });
+      
+      if (error.code === 'storage/unauthorized') {
+        toast({
+            variant: "destructive",
+            title: "Image Upload Failed",
+            description: "Permission denied. Please check your cloud storage CORS settings.",
+        });
+      } else {
+        toast({
+            variant: "destructive",
+            title: "Submission Failed",
+            description: "There was an error submitting your item. Please try again.",
+        });
+      }
+      
       throw error;
     } finally {
         setIsSubmitting(false);
