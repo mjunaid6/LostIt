@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import type { User } from "@/types";
 import { useAuth } from "@/context/AuthContext";
+import Link from "next/link";
 
 function getInitials(name: string) {
     if (!name) return '';
@@ -50,8 +51,8 @@ export function UserNav({ user }: { user: User }) {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuItem>
-            Profile
+          <DropdownMenuItem asChild className="cursor-pointer">
+            <Link href="/profile">Profile</Link>
           </DropdownMenuItem>
           <DropdownMenuItem>
             Settings

@@ -20,4 +20,5 @@ export type User = {
   email: string;
   university: string;
   avatar: string;
+  phone?: string;
 };
