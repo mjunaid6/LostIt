@@ -24,6 +24,7 @@ import { useToast } from "@/hooks/use-toast"
 import { categories, getCategoryIcon } from "@/lib/icons"
 import { useItems } from "@/context/ItemContext"
 import { Loader2 } from "lucide-react"
+import { Alert, AlertDescription, AlertTitle } from "./ui/alert"
 
 const formSchema = z.object({
   title: z.string().min(2, {
@@ -66,6 +67,7 @@ export function ReportItemForm({ type, university }: ReportItemFormProps) {
   const { addItem } = useItems();
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [corsErrorOrigin, setCorsErrorOrigin] = useState<string | null>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -87,6 +89,7 @@ export function ReportItemForm({ type, university }: ReportItemFormProps) {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true);
+    setCorsErrorOrigin(null);
     
     let photoDataUri: string | null = null;
     if (imageFile) {
@@ -119,19 +122,25 @@ export function ReportItemForm({ type, university }: ReportItemFormProps) {
         router.push('/dashboard');
     } catch (error: any) {
         console.error("Error adding item:", error);
-        let description = "An unexpected error occurred. Please try again.";
-
-        if (error.message && error.message.startsWith('CORS:')) {
-            description = "Could not upload the image. This is a project configuration issue (CORS). Please check your Firebase Storage settings to allow requests from this website.";
-        } else if (error.message && error.message.includes("AI tag generation failed")) {
-            description = "Could not generate AI tags for the item. Please try again later.";
-        }
         
-        toast({
-            variant: "destructive",
-            title: "Submission Error",
-            description: description,
-        });
+        if (error.message && error.message.startsWith('CORS:')) {
+            setCorsErrorOrigin(window.location.origin);
+             toast({
+                variant: "destructive",
+                title: "Image Upload Failed",
+                description: "A permission error occurred. See the message above the form for details.",
+            });
+        } else {
+            let description = "An unexpected error occurred. Please try again.";
+            if (error.message && error.message.includes("AI tag generation failed")) {
+                description = "Could not generate AI tags for the item. Please try again later.";
+            }
+            toast({
+                variant: "destructive",
+                title: "Submission Error",
+                description: description,
+            });
+        }
     } finally {
         setIsSubmitting(false);
     }
@@ -139,6 +148,17 @@ export function ReportItemForm({ type, university }: ReportItemFormProps) {
 
   return (
     <Form {...form}>
+      {corsErrorOrigin && (
+        <Alert variant="destructive" className="mb-8">
+            <AlertTitle>Action Required: Fix Firebase Storage Permissions</AlertTitle>
+            <AlertDescription className="space-y-2">
+                <p>Your app cannot upload images because your Firebase Storage is blocking requests from this website's domain (a security feature called CORS).</p>
+                <p>To fix this, you must add the following origin to your Firebase Storage bucket's CORS configuration:</p>
+                <pre className="text-xs bg-muted p-2 rounded-md break-all font-mono">{corsErrorOrigin}</pre>
+                <p>Please refer to the Firebase documentation on "Configuring Cross-Origin Resource Sharing (CORS)" for step-by-step instructions on how to do this in the Google Cloud console.</p>
+            </AlertDescription>
+        </Alert>
+      )}
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
         <FormField
           control={form.control}
