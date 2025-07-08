@@ -11,6 +11,7 @@ export type Item = {
   imageUrl: string;
   reportedBy: string; // user email
   createdAt: Date;
+  tags?: string[];
 };
 
 export type User = {

@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { getCategoryIcon } from "@/lib/icons";
-import { MapPin, User as UserIcon, Phone } from "lucide-react";
+import { MapPin, User as UserIcon, Phone, Tags } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Item, User } from "@/types";
@@ -88,7 +88,22 @@ export function ItemDetailsDialog({ item, isOpen, onClose }: ItemDetailsDialogPr
                 {item.description}
               </DialogDescription>
             </DialogHeader>
-            <DialogFooter className="pt-6 flex-col sm:flex-col sm:space-x-0 items-stretch gap-4">
+
+            {item.tags && item.tags.length > 0 && (
+                <div className="my-4">
+                    <div className="flex items-center mb-2 text-sm font-medium text-muted-foreground">
+                        <Tags className="w-4 h-4 mr-2" /> AI-Generated Tags
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                        {item.tags.map((tag, index) => (
+                            <Badge key={index} variant="outline">{tag}</Badge>
+                        ))}
+                    </div>
+                     <Separator className="mt-4" />
+                </div>
+            )}
+
+            <DialogFooter className="pt-2 flex-col sm:flex-col sm:space-x-0 items-stretch gap-4">
                 <Card className="bg-secondary/50">
                     <CardHeader className="p-0 pb-2">
                         <CardTitle className="text-base">Contact Information</CardTitle>

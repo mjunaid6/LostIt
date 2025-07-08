@@ -23,6 +23,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast"
 import { categories, getCategoryIcon } from "@/lib/icons"
 import { useItems } from "@/context/ItemContext"
+import { Loader2 } from "lucide-react"
 
 const formSchema = z.object({
   title: z.string().min(2, {
@@ -49,6 +50,16 @@ type ReportItemFormProps = {
   university: string;
 }
 
+const fileToDataUri = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+}
+
+
 export function ReportItemForm({ type, university }: ReportItemFormProps) {
   const router = useRouter();
   const { toast } = useToast();
@@ -74,23 +85,48 @@ export function ReportItemForm({ type, university }: ReportItemFormProps) {
     }
   };
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true);
     
-    const imageUrl = imageFile ? URL.createObjectURL(imageFile) : "https://placehold.co/600x400.png";
+    let photoDataUri: string | null = null;
+    if (imageFile) {
+        try {
+            photoDataUri = await fileToDataUri(imageFile);
+        } catch (error) {
+            console.error("Error converting image to data URI:", error);
+            toast({
+                variant: "destructive",
+                title: "Image Upload Error",
+                description: "Could not process the image file. Please try another.",
+            });
+            setIsSubmitting(false);
+            return;
+        }
+    }
 
-    addItem({
-        ...values,
-        imageUrl: imageUrl,
-        status: type, 
-    });
+    try {
+        await addItem({
+            ...values,
+            imageUrl: imageFile ? URL.createObjectURL(imageFile) : "https://placehold.co/600x400.png",
+            photoDataUri: photoDataUri,
+            status: type, 
+        });
 
-    toast({
-      title: `Item ${type === 'lost' ? 'Lost' : 'Found'} Reported!`,
-      description: "Thank you! Your report has been submitted.",
-    });
-    router.push('/dashboard');
-    setIsSubmitting(false);
+        toast({
+        title: `Item ${type === 'lost' ? 'Lost' : 'Found'} Reported!`,
+        description: "Your report has been submitted and tagged with AI.",
+        });
+        router.push('/dashboard');
+    } catch (error) {
+        console.error("Error adding item:", error);
+        toast({
+            variant: "destructive",
+            title: "Submission Error",
+            description: "Could not generate AI tags for the item. Please try again later.",
+        });
+    } finally {
+        setIsSubmitting(false);
+    }
   }
 
   return (
@@ -217,7 +253,8 @@ export function ReportItemForm({ type, university }: ReportItemFormProps) {
           <FormMessage />
         </FormItem>
         <Button type="submit" size="lg" className="w-full md:w-auto" disabled={isSubmitting}>
-          {isSubmitting ? "Submitting..." : "Submit Report"}
+          {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {isSubmitting ? "Analyzing & Submitting..." : "Submit Report"}
         </Button>
       </form>
     </Form>
