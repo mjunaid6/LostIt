@@ -107,7 +107,7 @@ export function ReportItemForm({ type, university }: ReportItemFormProps) {
     try {
         await addItem({
             ...values,
-            imageUrl: imageFile ? URL.createObjectURL(imageFile) : "https://placehold.co/600x400.png",
+            imageFile: imageFile,
             photoDataUri: photoDataUri,
             status: type, 
         });

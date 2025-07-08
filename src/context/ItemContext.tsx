@@ -5,13 +5,15 @@ import React, { createContext, useContext, useState, ReactNode, useEffect } from
 import type { Item } from '@/types';
 import { useAuth } from './AuthContext';
 import { generateTags } from '@/ai/flows/generate-tags-flow';
-import { db } from '@/lib/firebase';
+import { db, storage } from '@/lib/firebase';
 import { collection, addDoc, onSnapshot, query, orderBy, doc, updateDoc, Timestamp } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useToast } from '@/hooks/use-toast';
 
 
-type NewItemData = Omit<Item, 'id' | 'createdAt' | 'reportedBy' | 'tags'> & {
+type NewItemData = Omit<Item, 'id' | 'createdAt' | 'reportedBy' | 'tags' | 'imageUrl'> & {
     photoDataUri?: string | null;
+    imageFile?: File | null;
 };
 
 interface ItemContextType {
@@ -63,7 +65,7 @@ export const ItemProvider = ({ children }: { children: ReactNode }) => {
   }, [toast]);
 
   const addItem = async (itemData: NewItemData) => {
-    if (!user || !db) return; 
+    if (!user || !db || !storage) return; 
 
     let generatedTags: string[] = [];
     try {
@@ -78,19 +80,26 @@ export const ItemProvider = ({ children }: { children: ReactNode }) => {
         throw new Error("AI tag generation failed.");
     }
     
-    // Use the base64 data URI as the persisted image URL.
-    const imageUrl = itemData.photoDataUri || "https://placehold.co/600x400.png";
+    let finalImageUrl = "https://placehold.co/600x400.png";
+
+    if (itemData.imageFile) {
+        const file = itemData.imageFile;
+        const storageRef = ref(storage, `items/${Date.now()}-${file.name}`);
+        const uploadResult = await uploadBytes(storageRef, file);
+        finalImageUrl = await getDownloadURL(uploadResult.ref);
+    }
 
     const newItemForFirestore = {
       ...itemData,
       reportedBy: user.email,
       createdAt: new Date(), // Firestore will convert this to a Timestamp
       tags: generatedTags,
-      imageUrl: imageUrl,
+      imageUrl: finalImageUrl,
     };
     
     // Clean up properties that shouldn't be in the database
     delete (newItemForFirestore as any).photoDataUri;
+    delete (newItemForFirestore as any).imageFile;
 
     await addDoc(collection(db, "items"), newItemForFirestore);
   };

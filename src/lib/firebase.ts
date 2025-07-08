@@ -1,6 +1,7 @@
 import { initializeApp, getApps, getApp, type FirebaseApp } from "firebase/app";
 import { getAuth, type Auth } from "firebase/auth";
 import { getFirestore, type Firestore } from "firebase/firestore";
+import { getStorage, type FirebaseStorage } from "firebase/storage";
 
 // IMPORTANT: Replace with your own Firebase configuration in a .env.local file
 const firebaseConfig = {
@@ -15,12 +16,14 @@ const firebaseConfig = {
 let app: FirebaseApp;
 let auth: Auth;
 let db: Firestore;
+let storage: FirebaseStorage;
 
 // Conditionally initialize Firebase
 if (firebaseConfig.apiKey) {
   app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
   auth = getAuth(app);
   db = getFirestore(app);
+  storage = getStorage(app);
 } else {
     // This is a graceful fallback for environments where env vars are not set.
     // The app will not have Firebase functionality, but it won't crash.
@@ -29,7 +32,8 @@ if (firebaseConfig.apiKey) {
     app = {} as FirebaseApp;
     auth = {} as Auth;
     db = {} as Firestore;
+    storage = {} as FirebaseStorage;
 }
 
 
-export { app, auth, db };
+export { app, auth, db, storage };
