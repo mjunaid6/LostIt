@@ -23,8 +23,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast"
 import { categories, getCategoryIcon } from "@/lib/icons"
 import { useItems } from "@/context/ItemContext"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Loader2, AlertCircle } from "lucide-react"
+import { Loader2 } from "lucide-react"
 
 // Zod schema doesn't include the file input, as it's handled separately.
 const formSchema = z.object({
@@ -55,7 +54,7 @@ type ReportItemFormProps = {
 export function ReportItemForm({ type, university }: ReportItemFormProps) {
   const router = useRouter();
   const { toast } = useToast();
-  const { addItem, isUploading, uploadError } = useItems();
+  const { addItem, isSubmitting } = useItems();
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
@@ -96,31 +95,18 @@ export function ReportItemForm({ type, university }: ReportItemFormProps) {
 
         toast({
         title: `Item ${type === 'lost' ? 'Lost' : 'Found'} Reported!`,
-        description: "Your report has been submitted and tagged with AI.",
+        description: "Your report is submitted. The image is local and will disappear on refresh.",
         });
         router.push('/dashboard');
     } catch (error: any) {
-        console.error("Error adding item:", error);
-        toast({
-            variant: "destructive",
-            title: "Submission Error",
-            description: error.message || "An unexpected error occurred. Please try again.",
-        });
+        // Error is already toasted in the context
+        console.error("Form submission error:", error);
     }
   }
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-        {uploadError && (
-            <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Upload Failed</AlertTitle>
-                <AlertDescription>
-                   {uploadError}
-                </AlertDescription>
-            </Alert>
-        )}
         <FormField
           control={form.control}
           name="title"
@@ -233,7 +219,7 @@ export function ReportItemForm({ type, university }: ReportItemFormProps) {
                 <Input type="file" accept="image/*" onChange={handleImageChange} />
             </FormControl>
             <FormDescription>
-                A clear photo helps others identify the item.
+                A clear photo helps others identify the item. This is a temporary preview.
             </FormDescription>
             {imagePreview && (
                 <div className="mt-4">
@@ -243,9 +229,9 @@ export function ReportItemForm({ type, university }: ReportItemFormProps) {
             <FormMessage>{form.formState.errors.root?.message}</FormMessage>
         </FormItem>
         
-        <Button type="submit" size="lg" className="w-full md:w-auto" disabled={isUploading}>
-          {isUploading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {isUploading ? "Submitting..." : "Submit Report"}
+        <Button type="submit" size="lg" className="w-full md:w-auto" disabled={isSubmitting}>
+          {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {isSubmitting ? "Submitting..." : "Submit Report"}
         </Button>
       </form>
     </Form>
