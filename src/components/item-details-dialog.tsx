@@ -16,13 +16,14 @@ import { Separator } from "@/components/ui/separator";
 import { getCategoryIcon } from "@/lib/icons";
 import { MapPin, User, Phone } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import type { Item, User } from "@/types";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import type { Item, User as UserType } from "@/types";
 
 type ItemDetailsDialogProps = {
   item: Item;
   isOpen: boolean;
   onClose: () => void;
-  currentUser: User;
+  currentUser: UserType;
 };
 
 export function ItemDetailsDialog({ item, isOpen, onClose, currentUser }: ItemDetailsDialogProps) {
