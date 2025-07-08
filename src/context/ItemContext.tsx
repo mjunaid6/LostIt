@@ -1,11 +1,13 @@
 
 'use client';
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import type { Item } from '@/types';
-import { mockItems } from '@/lib/data';
 import { useAuth } from './AuthContext';
 import { generateTags } from '@/ai/flows/generate-tags-flow';
+import { db } from '@/lib/firebase';
+import { collection, addDoc, onSnapshot, query, orderBy, doc, updateDoc, Timestamp } from 'firebase/firestore';
+
 
 type NewItemData = Omit<Item, 'id' | 'createdAt' | 'reportedBy' | 'tags'> & {
     photoDataUri?: string | null;
@@ -20,11 +22,36 @@ interface ItemContextType {
 const ItemContext = createContext<ItemContextType | undefined>(undefined);
 
 export const ItemProvider = ({ children }: { children: ReactNode }) => {
-  const [items, setItems] = useState<Item[]>(mockItems);
+  const [items, setItems] = useState<Item[]>([]);
   const { user } = useAuth();
 
+  useEffect(() => {
+    if (!db) {
+        console.error("Firestore not initialized. Item features are disabled.");
+        return;
+    }
+
+    const q = query(collection(db, "items"), orderBy("createdAt", "desc"));
+
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+        const itemsFromFirestore: Item[] = [];
+        querySnapshot.forEach((doc) => {
+            const data = doc.data();
+            itemsFromFirestore.push({
+                ...data,
+                id: doc.id,
+                // Make sure to convert Firestore Timestamp to JS Date
+                createdAt: (data.createdAt as Timestamp).toDate(),
+            } as Item);
+        });
+        setItems(itemsFromFirestore);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
   const addItem = async (itemData: NewItemData) => {
-    if (!user) return; 
+    if (!user || !db) return; 
 
     let generatedTags: string[] = [];
     try {
@@ -38,23 +65,30 @@ export const ItemProvider = ({ children }: { children: ReactNode }) => {
         // We can proceed without tags, or throw an error to be caught by the form
         throw new Error("AI tag generation failed.");
     }
+    
+    // Use the base64 data URI as the persisted image URL.
+    const imageUrl = itemData.photoDataUri || "https://placehold.co/600x400.png";
 
-    const newItem: Item = {
+    const newItemForFirestore = {
       ...itemData,
-      id: new Date().getTime().toString(), // Use timestamp for a unique enough ID
-      createdAt: new Date(),
       reportedBy: user.email,
+      createdAt: new Date(), // Firestore will convert this to a Timestamp
       tags: generatedTags,
+      imageUrl: imageUrl,
     };
-    setItems(prevItems => [newItem, ...prevItems]);
+    
+    // Clean up properties that shouldn't be in the database
+    delete (newItemForFirestore as any).photoDataUri;
+
+    await addDoc(collection(db, "items"), newItemForFirestore);
   };
   
   const updateItemStatus = (itemId: string, status: 'reunited') => {
-      setItems(prevItems =>
-      prevItems.map(item =>
-        item.id === itemId ? { ...item, status } : item
-      )
-    );
+    if (!db) return;
+    const itemRef = doc(db, "items", itemId);
+    updateDoc(itemRef, {
+        status: status
+    });
   }
 
   const value = {
