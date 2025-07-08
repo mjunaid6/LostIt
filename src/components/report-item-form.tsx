@@ -38,6 +38,7 @@ const formSchema = z.object({
     message: "Please provide valid contact information.",
   }),
   imageUrl: z.string().url().optional().or(z.literal('')),
+  university: z.string(),
 })
 
 type ReportItemFormProps = {
@@ -56,6 +57,8 @@ export function ReportItemForm({ type, university }: ReportItemFormProps) {
       description: "",
       location: "",
       contact: "",
+      imageUrl: "",
+      university: university,
     },
   })
 
@@ -157,7 +160,7 @@ export function ReportItemForm({ type, university }: ReportItemFormProps) {
                 <FormItem>
                 <FormLabel>University</FormLabel>
                 <FormControl>
-                    <Input disabled value={university} />
+                    <Input disabled {...field} />
                 </FormControl>
                 </FormItem>
             )}
