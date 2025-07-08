@@ -1,16 +1,17 @@
+
 import { Item, User } from '@/types';
 
 export const mockUsers: User[] = [
     {
         name: "Jane Doe",
-        email: "jane@state-university.edu",
-        university: "State University",
+        email: "jane@jmi.ac.in",
+        university: "Jamia Milia Islamia(JMI)",
         avatar: "https://placehold.co/100x100.png"
     },
     {
         name: "John Smith",
-        email: "john@city-college.edu",
-        university: "City College",
+        email: "john@dtu.ac.in",
+        university: "Delhi Technological University(DTU)",
         avatar: "https://placehold.co/100x100.png"
     }
 ];
@@ -22,12 +23,12 @@ export const mockItems: Item[] = [
     description: 'Lost my black Jansport backpack, probably in the main library. It has a laptop, a blue notebook, and a water bottle inside. The zipper on the front pocket is broken.',
     category: 'Other',
     location: 'Main Library, 3rd Floor',
-    university: 'State University',
+    university: 'Jamia Milia Islamia(JMI)',
     type: 'lost',
     status: 'lost',
     contact: 'jane.doe@email.com',
     imageUrl: 'https://placehold.co/600x400.png',
-    reportedBy: 'jane@state-university.edu',
+    reportedBy: 'jane@jmi.ac.in',
     createdAt: new Date('2024-05-20T10:00:00Z'),
   },
   {
@@ -36,12 +37,12 @@ export const mockItems: Item[] = [
     description: 'Found an iPhone 13 with a pink glittery case near the student union building. The lock screen is a picture of a cat. It was left on a bench.',
     category: 'Electronics',
     location: 'Student Union Bench',
-    university: 'State University',
+    university: 'Jamia Milia Islamia(JMI)',
     type: 'found',
     status: 'found',
     contact: 'contact-campus-security@email.com',
     imageUrl: 'https://placehold.co/600x400.png',
-    reportedBy: 'security@state-university.edu',
+    reportedBy: 'security@jmi.ac.in',
     createdAt: new Date('2024-05-21T14:30:00Z'),
   },
   {
@@ -50,12 +51,12 @@ export const mockItems: Item[] = [
     description: 'Lost a set of keys on a blue lanyard. Has a car key, a house key, and a small keychain that looks like a coffee cup. Possibly lost on the campus shuttle.',
     category: 'Keys',
     location: 'Campus Shuttle',
-    university: 'State University',
+    university: 'Delhi Technological University(DTU)',
     type: 'lost',
     status: 'lost',
     contact: 'another.student@email.com',
     imageUrl: 'https://placehold.co/600x400.png',
-    reportedBy: 'student@state-university.edu',
+    reportedBy: 'student@dtu.ac.in',
     createdAt: new Date('2024-05-22T09:00:00Z'),
   },
     {
@@ -64,12 +65,12 @@ export const mockItems: Item[] = [
     description: 'Found an Organic Chemistry textbook in the chemistry lab, room 204. No name inside, but it has some highlighting on chapter 3.',
     category: 'Books',
     location: 'Chemistry Lab 204',
-    university: 'State University',
+    university: 'Netaji Subhash University of technology(NSUT)',
     type: 'found',
     status: 'found',
     contact: 'lab-assistant@email.com',
     imageUrl: 'https://placehold.co/600x400.png',
-    reportedBy: 'lab.assistant@state-university.edu',
+    reportedBy: 'lab.assistant@nsut.ac.in',
     createdAt: new Date('2024-05-22T11:00:00Z'),
   },
     {
@@ -78,12 +79,12 @@ export const mockItems: Item[] = [
     description: 'Left my blue North Face jacket in the lecture hall (Building A, Room 101). It\'s a size medium.',
     category: 'Clothing',
     location: 'Lecture Hall A-101',
-    university: 'City College',
+    university: 'Delhi Technological University(DTU)',
     type: 'lost',
     status: 'lost',
     contact: 'john.smith@email.com',
     imageUrl: 'https://placehold.co/600x400.png',
-    reportedBy: 'john@city-college.edu',
+    reportedBy: 'john@dtu.ac.in',
     createdAt: new Date('2024-05-22T16:00:00Z'),
   },
    {
@@ -92,12 +93,12 @@ export const mockItems: Item[] = [
     description: 'Found a pair of black Ray-Ban Wayfarer sunglasses at the campus coffee shop. They are in perfect condition.',
     category: 'Other',
     location: 'Campus Coffee Shop',
-    university: 'State University',
+    university: 'Jamia Milia Islamia(JMI)',
     type: 'found',
     status: 'reunited',
     contact: 'barista@email.com',
     imageUrl: 'https://placehold.co/600x400.png',
-    reportedBy: 'jane@state-university.edu',
+    reportedBy: 'jane@jmi.ac.in',
     createdAt: new Date('2024-05-19T13:00:00Z'),
   },
 ];

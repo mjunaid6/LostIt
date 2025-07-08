@@ -1,9 +1,11 @@
+
 "use client"
 
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
 import { useRouter } from "next/navigation"
+import React, { useState } from "react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -20,6 +22,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
 import { categories, getCategoryIcon } from "@/lib/icons"
+import { useItems } from "@/context/ItemContext"
 
 const formSchema = z.object({
   title: z.string().min(2, {
@@ -37,8 +40,8 @@ const formSchema = z.object({
   contact: z.string().min(5, {
     message: "Please provide valid contact information.",
   }),
-  imageUrl: z.string().url().optional().or(z.literal('')),
   university: z.string(),
+  type: z.enum(['lost', 'found']),
 })
 
 type ReportItemFormProps = {
@@ -49,6 +52,9 @@ type ReportItemFormProps = {
 export function ReportItemForm({ type, university }: ReportItemFormProps) {
   const router = useRouter();
   const { toast } = useToast();
+  const { addItem } = useItems();
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -57,18 +63,34 @@ export function ReportItemForm({ type, university }: ReportItemFormProps) {
       description: "",
       location: "",
       contact: "",
-      imageUrl: "",
       university: university,
+      type: type,
     },
   })
 
+  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files[0]) {
+        setImageFile(event.target.files[0]);
+    }
+  };
+
   function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values) // In a real app, this would submit to a backend.
+    setIsSubmitting(true);
+    
+    const imageUrl = imageFile ? URL.createObjectURL(imageFile) : "https://placehold.co/600x400.png";
+
+    addItem({
+        ...values,
+        imageUrl: imageUrl,
+        status: type, 
+    });
+
     toast({
       title: `Item ${type === 'lost' ? 'Lost' : 'Found'} Reported!`,
       description: "Thank you! Your report has been submitted.",
     });
     router.push('/dashboard');
+    setIsSubmitting(false);
   }
 
   return (
@@ -179,23 +201,24 @@ export function ReportItemForm({ type, university }: ReportItemFormProps) {
                 )}
             />
         </div>
-         <FormField
-          control={form.control}
-          name="imageUrl"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Photo (Optional)</FormLabel>
-              <FormControl>
-                <Input type="file" className="text-muted-foreground file:text-foreground" />
-              </FormControl>
-               <FormDescription>
-                Uploading a photo greatly increases the chance of recovery.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <Button type="submit" size="lg" className="w-full md:w-auto">Submit Report</Button>
+        <FormItem>
+          <FormLabel>Photo (Optional)</FormLabel>
+          <FormControl>
+            <Input 
+                type="file" 
+                className="text-muted-foreground file:text-foreground"
+                accept="image/*"
+                onChange={handleImageChange}
+            />
+          </FormControl>
+          <FormDescription>
+            Uploading a photo greatly increases the chance of recovery.
+          </FormDescription>
+          <FormMessage />
+        </FormItem>
+        <Button type="submit" size="lg" className="w-full md:w-auto" disabled={isSubmitting}>
+          {isSubmitting ? "Submitting..." : "Submit Report"}
+        </Button>
       </form>
     </Form>
   )

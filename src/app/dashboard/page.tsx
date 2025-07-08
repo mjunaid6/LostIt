@@ -1,12 +1,14 @@
+
 "use client"
 import React, { useState } from 'react';
 import Header from "@/components/header";
 import { ItemCard } from "@/components/item-card";
-import { Item, mockItems } from "@/lib/data";
+import { Item } from "@/types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ItemDetailsDialog } from "@/components/item-details-dialog";
 import { useAuth } from '@/context/AuthContext';
 import ProtectedRoute from '@/components/ProtectedRoute';
+import { useItems } from '@/context/ItemContext';
 
 export default function DashboardPage() {
   return (
@@ -19,11 +21,12 @@ export default function DashboardPage() {
 function DashboardContent() {
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const { user } = useAuth();
+  const { items } = useItems();
 
   // ProtectedRoute should prevent user from being null, but this is a safeguard
   if (!user) return null;
 
-  const universityItems = mockItems.filter(item => item.university === user.university);
+  const universityItems = items.filter(item => item.university === user.university);
   const lostItems = universityItems.filter(item => item.type === 'lost' && item.status === 'lost');
   const foundItems = universityItems.filter(item => item.type === 'found' && item.status === 'found');
   

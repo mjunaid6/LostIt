@@ -1,3 +1,4 @@
+
 'use client'
 import { useState } from "react"
 import Link from "next/link"
@@ -97,10 +98,9 @@ export default function SignupPage() {
                         <SelectValue placeholder="Select your university" />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="State University">State University</SelectItem>
-                        <SelectItem value="City College">City College</SelectItem>
-                        <SelectItem value="Tech Institute">Tech Institute</SelectItem>
-                        <SelectItem value="Community College">Community College</SelectItem>
+                        <SelectItem value="Jamia Milia Islamia(JMI)">Jamia Milia Islamia (JMI)</SelectItem>
+                        <SelectItem value="Delhi Technological University(DTU)">Delhi Technological University (DTU)</SelectItem>
+                        <SelectItem value="Netaji Subhash University of technology(NSUT)">Netaji Subhash University of technology (NSUT)</SelectItem>
                     </SelectContent>
                 </Select>
             </div>

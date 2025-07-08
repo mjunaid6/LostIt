@@ -1,6 +1,7 @@
+
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React from "react";
 import Image from "next/image";
 import {
   Dialog,
@@ -14,12 +15,13 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { getCategoryIcon } from "@/lib/icons";
-import { MapPin, User, Phone } from "lucide-react";
+import { MapPin, User as UserIcon, Phone } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { Item } from "@/types";
+import type { Item, User } from "@/types";
 import { ScrollArea } from "./ui/scroll-area";
 import { useAuth } from "@/context/AuthContext";
+import { useItems } from "@/context/ItemContext";
 
 type ItemDetailsDialogProps = {
   item: Item;
@@ -28,26 +30,24 @@ type ItemDetailsDialogProps = {
 };
 
 export function ItemDetailsDialog({ item, isOpen, onClose }: ItemDetailsDialogProps) {
-  const [isReunited, setIsReunited] = useState(item.status === 'reunited');
   const { toast } = useToast();
   const { user: currentUser } = useAuth();
-
-  useEffect(() => {
-    setIsReunited(item.status === 'reunited');
-  }, [item]);
+  const { updateItemStatus } = useItems();
 
   if (!currentUser) {
     // Or a loading state, but parent should handle this
     return null;
   }
 
+  const isReunited = item.status === 'reunited';
+
   const handleReuniteClick = () => {
-    setIsReunited(true);
+    updateItemStatus(item.id, 'reunited');
     toast({
         title: "Item Reunited!",
         description: `"${item.title}" has been marked as reunited.`,
     });
-    // In a real app, you would also make an API call here to update the item's status in the database.
+    onClose();
   };
 
   const isOwner = currentUser.email === item.reportedBy;
@@ -78,7 +78,7 @@ export function ItemDetailsDialog({ item, isOpen, onClose }: ItemDetailsDialogPr
                 </div>
                 <Badge 
                     variant={isReunited ? "default" : "outline"} 
-                    className={`transition-all duration-300 ${isReunited ? 'bg-green-500 text-white' : ''}`}
+                    className={`transition-all duration-300 ${isReunited ? 'bg-green-600 text-white' : ''}`}
                 >
                     {isReunited ? 'Reunited' : item.type === 'lost' ? 'Lost' : 'Found'}
                 </Badge>
@@ -89,12 +89,12 @@ export function ItemDetailsDialog({ item, isOpen, onClose }: ItemDetailsDialogPr
               </DialogDescription>
             </DialogHeader>
             <DialogFooter className="pt-6 flex-col sm:flex-col sm:space-x-0 items-stretch gap-4">
-                <Card className="bg-secondary/50 p-4">
+                <Card className="bg-secondary/50">
                     <CardHeader className="p-0 pb-2">
                         <CardTitle className="text-base">Contact Information</CardTitle>
                     </CardHeader>
                     <CardContent className="p-0 text-sm text-muted-foreground space-y-2">
-                        <div className="flex items-center"><User className="w-4 h-4 mr-2" /> Reported by user at {item.university}</div>
+                        <div className="flex items-center"><UserIcon className="w-4 h-4 mr-2" /> Reported by user at {item.university}</div>
                         <div className="flex items-center"><Phone className="w-4 h-4 mr-2" /> {item.contact}</div>
                     </CardContent>
                 </Card>

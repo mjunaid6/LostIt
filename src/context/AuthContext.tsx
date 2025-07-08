@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
@@ -32,13 +33,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
       if (firebaseUser) {
-        // In a real app, university would be stored/fetched from Firestore.
-        // For now, we'll try to get it from a temporary source or default it.
+        // In a real app, university would be stored/fetched from a database like Firestore.
+        // For this prototype, we use localStorage to persist it across sessions.
+        const storedUniversity = typeof window !== 'undefined' ? localStorage.getItem(`user_university_${firebaseUser.uid}`) : null;
+
         const userPayload: User = {
           uid: firebaseUser.uid,
           name: firebaseUser.displayName || 'Anonymous User',
           email: firebaseUser.email!,
-          university: (firebaseUser as any).university || 'State University', 
+          university: storedUniversity || 'Jamia Milia Islamia(JMI)', 
           avatar: firebaseUser.photoURL || `https://placehold.co/100x100.png`
         };
         setUser(userPayload);
@@ -53,6 +56,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const login = (email: string, pass: string) => {
     if (!auth.app) return Promise.reject(new Error("Firebase not initialized."));
+    // After login, onAuthStateChanged will fire and handle setting the user state.
     return signInWithEmailAndPassword(auth, email, pass);
   };
 
@@ -61,8 +65,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
     await updateProfile(userCredential.user, { displayName: name });
     
-    // This is a workaround because custom claims require a backend.
-    // We'll set the user object on the client side after signup.
+    // Persist university in localStorage as Firebase Auth user object doesn't support custom fields.
+    if (typeof window !== 'undefined') {
+        localStorage.setItem(`user_university_${userCredential.user.uid}`, university);
+    }
+    
+    // Set user state immediately for a smooth UX
     const userPayload: User = {
         uid: userCredential.user.uid,
         name: name,
@@ -81,6 +89,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return;
     };
     await signOut(auth);
+    // We don't clear localStorage here so the university is remembered if the user logs back in.
     router.push('/login');
   };
 
@@ -92,7 +101,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     logout,
   };
 
-  return <AuthContext.Provider value={value}>{!loading && children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = () => {

@@ -1,8 +1,10 @@
+
 import type { Metadata } from "next";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { Toaster } from "@/components/ui/toaster"
 import { AuthProvider } from "@/context/AuthContext";
+import { ItemProvider } from "@/context/ItemContext";
 
 export const metadata: Metadata = {
   title: "LostIt - Lost & Found",
@@ -23,8 +25,10 @@ export default function RootLayout({
       </head>
       <body className={cn("min-h-screen bg-background font-body antialiased")}>
         <AuthProvider>
-          {children}
-          <Toaster />
+          <ItemProvider>
+            {children}
+            <Toaster />
+          </ItemProvider>
         </AuthProvider>
       </body>
     </html>
