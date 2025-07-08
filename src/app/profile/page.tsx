@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -6,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import Image from 'next/image';
+import Link from 'next/link';
 
 import Header from '@/components/header';
 import ProtectedRoute from '@/components/ProtectedRoute';
@@ -17,7 +17,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { User as UserIcon, Mail, Building, Phone, Loader2, Edit, X } from 'lucide-react';
+import { User as UserIcon, Mail, Building, Phone, Loader2, Edit, X, ArrowLeft } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const profileSchema = z.object({
@@ -157,6 +157,14 @@ function ProfileContent() {
       <Header user={user} />
       <main className="flex-1 py-12">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-2xl">
+          <div className="mb-4">
+            <Button asChild variant="outline">
+              <Link href="/dashboard">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Go Back to Dashboard
+              </Link>
+            </Button>
+          </div>
           <Card>
             <CardHeader className="flex flex-row items-start justify-between">
               <div>
