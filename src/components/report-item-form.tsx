@@ -87,11 +87,6 @@ export function ReportItemForm({ type, university }: ReportItemFormProps) {
   };
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    if (!imageFile) {
-        form.setError("root", { type: "manual", message: "Please upload an image." });
-        return;
-    }
-
     try {
         await addItem({
             ...values,
@@ -142,21 +137,6 @@ export function ReportItemForm({ type, university }: ReportItemFormProps) {
             </FormItem>
           )}
         />
-        <FormItem>
-            <FormLabel>Item Photo</FormLabel>
-            <FormControl>
-                <Input type="file" accept="image/*" onChange={handleImageChange} required />
-            </FormControl>
-            <FormDescription>
-                A clear photo helps others identify the item.
-            </FormDescription>
-            {imagePreview && (
-                <div className="mt-4">
-                    <img src={imagePreview} alt="Item preview" className="rounded-md max-h-48" />
-                </div>
-            )}
-            <FormMessage>{form.formState.errors.root?.message}</FormMessage>
-        </FormItem>
         <FormField
           control={form.control}
           name="description"
@@ -246,6 +226,22 @@ export function ReportItemForm({ type, university }: ReportItemFormProps) {
                 )}
             />
         </div>
+        
+        <FormItem>
+            <FormLabel>Item Photo (Optional)</FormLabel>
+            <FormControl>
+                <Input type="file" accept="image/*" onChange={handleImageChange} />
+            </FormControl>
+            <FormDescription>
+                A clear photo helps others identify the item.
+            </FormDescription>
+            {imagePreview && (
+                <div className="mt-4">
+                    <img src={imagePreview} alt="Item preview" className="rounded-md max-h-48" />
+                </div>
+            )}
+            <FormMessage>{form.formState.errors.root?.message}</FormMessage>
+        </FormItem>
         
         <Button type="submit" size="lg" className="w-full md:w-auto" disabled={isUploading}>
           {isUploading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

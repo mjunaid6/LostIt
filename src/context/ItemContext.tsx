@@ -84,21 +84,21 @@ export const ItemProvider = ({ children }: { children: ReactNode }) => {
         setUploadError("Firebase is not configured correctly. Cannot submit item.");
         return;
     };
-    if (!itemData.imageFile) {
-        setUploadError("An image is required to report an item.");
-        return;
-    }
-
+    
     setIsUploading(true);
     setUploadError(null);
 
     try {
-        const imageFile = itemData.imageFile;
-        const storageRef = ref(storage, `items/${Date.now()}-${imageFile.name}`);
-        await uploadBytes(storageRef, imageFile);
-        const imageUrl = await getDownloadURL(storageRef);
+        let imageUrl = `https://placehold.co/600x400.png`;
+        let photoDataUri: string | undefined = undefined;
 
-        const photoDataUri = await fileToDataUri(imageFile);
+        if (itemData.imageFile) {
+            const imageFile = itemData.imageFile;
+            const storageRef = ref(storage, `items/${Date.now()}-${imageFile.name}`);
+            await uploadBytes(storageRef, imageFile);
+            imageUrl = await getDownloadURL(storageRef);
+            photoDataUri = await fileToDataUri(imageFile);
+        }
 
         const { tags } = await generateTags({
             description: itemData.description,
