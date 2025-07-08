@@ -117,12 +117,20 @@ export function ReportItemForm({ type, university }: ReportItemFormProps) {
         description: "Your report has been submitted and tagged with AI.",
         });
         router.push('/dashboard');
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error adding item:", error);
+        let description = "An unexpected error occurred. Please try again.";
+
+        if (error.message && error.message.startsWith('CORS:')) {
+            description = "Could not upload the image. This is a project configuration issue (CORS). Please check your Firebase Storage settings to allow requests from this website.";
+        } else if (error.message && error.message.includes("AI tag generation failed")) {
+            description = "Could not generate AI tags for the item. Please try again later.";
+        }
+        
         toast({
             variant: "destructive",
             title: "Submission Error",
-            description: "Could not generate AI tags for the item. Please try again later.",
+            description: description,
         });
     } finally {
         setIsSubmitting(false);

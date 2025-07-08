@@ -85,8 +85,18 @@ export const ItemProvider = ({ children }: { children: ReactNode }) => {
     if (itemData.imageFile) {
         const file = itemData.imageFile;
         const storageRef = ref(storage, `items/${Date.now()}-${file.name}`);
-        const uploadResult = await uploadBytes(storageRef, file);
-        finalImageUrl = await getDownloadURL(uploadResult.ref);
+        try {
+            const uploadResult = await uploadBytes(storageRef, file);
+            finalImageUrl = await getDownloadURL(uploadResult.ref);
+        } catch (e: any) {
+             // Firebase Storage throws 'storage/unauthorized' for CORS errors.
+            if (e.code === 'storage/unauthorized') {
+                console.error("CORS issue detected:", e);
+                throw new Error("CORS: Image upload failed due to a permission issue. Please check your Firebase Storage CORS configuration.");
+            }
+            // Re-throw other errors to be handled by the form.
+            throw e;
+        }
     }
 
     const newItemForFirestore = {
