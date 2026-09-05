@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+python-multipart
+python-dotenv
+pillow
+sentence-transformers
+chromadb
+google-cloud-firestore
+google-auth
